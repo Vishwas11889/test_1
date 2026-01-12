@@ -1,5 +1,6 @@
 import streamlit as st
 # import openai
+import os
 import json
 from langchain_groq import ChatGroq
 
@@ -71,11 +72,7 @@ Return STRICT JSON ONLY in the following structure:
 st.set_page_config(page_title="Doctor Documentation", layout="wide")
 st.title("🩺 Clinical Documentation ")
 
-api_key = st.text_input(
-    "Enter Groq API Key",
-    type="password",
-    help="Your API key will not be stored"
-)
+api_key = os.environ("api_key")
 
 llm = ChatGroq(
     model="openai/gpt-oss-120b",
@@ -106,9 +103,9 @@ Review after 2 days.
 if st.button("Generate "):
     if not doctor_text.strip():
         st.warning("Please enter clinical notes")
-    if not api_key:
-        st.warning("Please enter API key")
-        st.stop()
+    # if not api_key:
+    #     st.warning("Please enter API key")
+    #     st.stop()
 
     else:
         with st.spinner("Processing..."):

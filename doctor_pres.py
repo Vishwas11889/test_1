@@ -3,17 +3,7 @@ import streamlit as st
 import json
 from langchain_groq import ChatGroq
 
-llm = ChatGroq(
-    model="openai/gpt-oss-120b",
-    temperature=0,
-    max_tokens=None,
-    reasoning_format="parsed",
-    timeout=None,
-    max_retries=2,
-    api_key="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"
-    # other params...
-)
-structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
+
 
 # openai.api_key = "YOUR_API_KEY"
 
@@ -81,6 +71,25 @@ Return STRICT JSON ONLY in the following structure:
 st.set_page_config(page_title="Doctor Documentation", layout="wide")
 st.title("🩺 Clinical Documentation ")
 
+api_key = st.text_input(
+    "Enter Groq API Key",
+    type="password",
+    help="Your API key will not be stored"
+)
+
+llm = ChatGroq(
+    model="openai/gpt-oss-120b",
+    temperature=0,
+    max_tokens=None,
+    reasoning_format="parsed",
+    timeout=None,
+    max_retries=2,
+    api_key=api_key
+    # other params...
+)
+structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
+
+
 doctor_text = st.text_area(
     "Doctor writes prescription / consultation / discharge notes:",
     height=230,
@@ -97,6 +106,10 @@ Review after 2 days.
 if st.button("Generate "):
     if not doctor_text.strip():
         st.warning("Please enter clinical notes")
+    if not api_key:
+        st.warning("Please enter API key")
+        st.stop()
+
     else:
         with st.spinner("Processing..."):
             # response = openai.ChatCompletion.create(

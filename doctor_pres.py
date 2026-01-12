@@ -1,11 +1,11 @@
 import streamlit as st
 # import openai
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import json
 from langchain_groq import ChatGroq
 
-load_dotenv()
+# load_dotenv()
 
 
 SYSTEM_PROMPT = """
@@ -72,7 +72,7 @@ Return STRICT JSON ONLY in the following structure:
 st.set_page_config(page_title="Doctor Documentation", layout="wide")
 st.title("🩺 Clinical Documentation ")
 
-api_key = os.getenv("api_key")
+api_key = st.secrets["api_key"]
 
 llm = ChatGroq(
     model="openai/gpt-oss-120b",
@@ -173,3 +173,4 @@ if st.button("Generate "):
             except Exception:
                 st.error("Failed to parse AI response")
                 st.text(response.choices[0].message.content)
+

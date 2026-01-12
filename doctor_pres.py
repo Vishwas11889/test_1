@@ -1,12 +1,12 @@
 import streamlit as st
 # import openai
 import os
+from dotenv import load_dotenv
 import json
 from langchain_groq import ChatGroq
 
+load_dotenv()
 
-
-# openai.api_key = "YOUR_API_KEY"
 
 SYSTEM_PROMPT = """
 You are a clinical documentation and ICD-10 coding assistant for Indian hospitals.
@@ -72,7 +72,7 @@ Return STRICT JSON ONLY in the following structure:
 st.set_page_config(page_title="Doctor Documentation", layout="wide")
 st.title("🩺 Clinical Documentation ")
 
-api_key = os.environ("api_key")
+api_key = os.getenv("api_key")
 
 llm = ChatGroq(
     model="openai/gpt-oss-120b",

@@ -1,0 +1,340 @@
+You can pitch it as a capacity-planning and reliability proposal rather than just a GPU request.
+
+Real-Time ASR Infrastructure Proposal
+
+Executive Summary
+
+Goal: Support 50–60 concurrent meeting rooms with real-time transcription.
+
+Requirements:
+
+Low latency (<2 seconds)
+
+High availability
+
+Horizontal scalability
+
+Future growth to 200+ rooms
+
+GPU-efficient deployment
+
+
+
+---
+
+Assumptions
+
+Parameter	Value
+
+Concurrent Rooms	60
+Audio Format	16 kHz Mono
+Chunk Size	2-3 seconds
+ASR Model	Whisper Small
+Transport	WebSocket
+Peak Speakers	40-50% active simultaneously
+Expected Latency	< 2 sec
+
+
+
+---
+
+Recommended Architecture
+
+Browser Clients
+      │
+      ▼
+FastAPI Gateway
+(WebSocket Layer)
+      │
+      ▼
+Kafka Cluster
+(Audio Queue)
+      │
+      ▼
+ASR Workers
+(Faster Whisper)
+      │
+      ▼
+Kafka Result Topic
+      │
+      ▼
+FastAPI Gateway
+      │
+      ▼
+Browser Clients
+
+
+---
+
+Why Kafka?
+
+Without Kafka:
+
+Browser → ASR
+
+Problems:
+
+ASR downtime impacts users
+
+Difficult scaling
+
+No buffering
+
+No fault tolerance
+
+
+With Kafka:
+
+Browser → Gateway → Kafka → ASR
+
+Benefits:
+
+Reliability
+
+Messages survive pod restarts.
+
+Load Balancing
+
+Multiple ASR workers consume automatically.
+
+Scalability
+
+Add more GPUs later without frontend changes.
+
+Backpressure Handling
+
+Traffic spikes do not crash ASR.
+
+
+---
+
+Kubernetes Sizing
+
+FastAPI Gateway
+
+Responsibilities:
+
+WebSockets
+
+Authentication
+
+Room management
+
+Kafka producer/consumer
+
+
+Recommended:
+
+replicas: 2
+cpu: 2 cores
+memory: 4 GB
+
+
+---
+
+Kafka
+
+Recommended:
+
+brokers: 3
+
+Each broker:
+
+cpu: 2-4 cores
+memory: 8 GB
+disk: 100 GB SSD
+
+Reason:
+
+High availability
+
+Leader election
+
+Production readiness
+
+
+
+---
+
+Whisper Worker
+
+Recommended model:
+
+Whisper Small
+
+Benefits:
+
+Good accuracy
+
+Low VRAM usage
+
+High throughput
+
+
+Deployment:
+
+replicas: 1
+gpu: RTX A6000
+
+
+---
+
+GPU Recommendation
+
+Option 1 (Recommended)
+
+RTX A6000
+
+Specifications:
+
+Metric	Value
+
+VRAM	48 GB
+CUDA Cores	10752
+Memory Bandwidth	768 GB/s
+
+
+Capacity:
+
+Metric	Value
+
+Rooms	50-60
+GPU Utilization	20-40%
+Headroom	High
+
+
+Expected utilization leaves room for:
+
+VAD
+
+Diarization
+
+Future AI features
+
+
+
+---
+
+Option 2
+
+L4 GPU
+
+Suitable for:
+
+20-30 rooms
+
+Not ideal for future growth.
+
+
+---
+
+Throughput Estimate
+
+Assuming:
+
+Whisper Small
+
+Faster-Whisper
+
+FP16
+
+Batched inference
+
+
+Rooms	GPU Usage
+
+20	~10%
+40	~20%
+60	~30%
+100	~50%
+
+
+Approximate values.
+
+
+---
+
+High Availability
+
+Current:
+
+2 Gateway Pods
+3 Kafka Brokers
+1 ASR Worker
+
+Future:
+
+2 Gateway Pods
+3 Kafka Brokers
+2 ASR Workers
+2 GPUs
+
+No frontend changes required.
+
+
+---
+
+Cost Optimization
+
+For 60 rooms:
+
+Do NOT use
+
+Whisper Large
+
+Multiple GPUs
+
+Multiple ASR replicas
+
+
+Reason:
+
+Increased cost
+
+No significant benefit
+
+
+Use
+
+Faster-Whisper
+
+Whisper Small
+
+Single RTX A6000
+
+Kafka buffering
+
+
+This provides the best cost/performance ratio.
+
+
+---
+
+Final Recommendation to Management
+
+Proposed Infrastructure
+
+Component	Quantity
+
+FastAPI Gateway Pods	2
+Kafka Brokers	3
+RTX A6000 GPU	1
+Whisper Worker Pods	1
+Kubernetes Cluster	Existing
+Audio Chunk Size	2-3 seconds
+
+
+Expected Outcome
+
+Support 50–60 concurrent rooms comfortably.
+
+End-to-end transcription latency below 2 seconds.
+
+High availability through Kafka buffering.
+
+Scalable to 200+ rooms by adding ASR worker pods and GPUs.
+
+Minimal infrastructure changes required for future expansion.
+
+
+For a GenAI/ASR platform, this is a production-grade architecture that balances performance, reliability, and cost.
